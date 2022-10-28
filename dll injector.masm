@@ -1,0 +1,103 @@
+
+.386
+.model flat, stdcall
+.stack 8192
+
+include \masm32\include\masm32rt.inc
+include \masm32\include\masm32.inc
+include \masm32\include\kernel32.inc
+include \masm32\include\user32.inc
+includelib \masm32\lib\masm32.lib
+includelib \masm32\lib\kernel32.lib
+includelib \masm32\lib\user32.lib
+
+
+.data
+	PIZZA = 12
+	BURGER = 100
+
+
+	outwritten DWORD ?
+	baseaddress DWORD ?
+	phandle DWORD ?
+	dllpath BYTE "C:\Users\stargirl\source\repos\tutorialmasm\Debug\test.dll",0
+	dllpathlen DWORD ($-dllpath)/TYPE dllpath
+	;shellcodelength DWORD ($-shellcode)/TYPE shellcode
+	threadid DWORD 0
+	modulename BYTE "Kernel32",0
+	modulenamelen DWORD ($-modulename)/TYPE modulename
+	modulehandle DWORD ?
+	funcname BYTE "LoadLibraryA",0
+	funcnamelen DWORD ($-funcname)/TYPE byte
+	loadlibaddress DWORD ?
+
+.code
+main PROC
+	
+	; openprocess
+	push 30628 ;pid
+	push 0
+	push 001FFFFFh 
+	call OpenProcess
+	mov phandle,eax
+
+
+	;virtualallocex
+	push 40h
+	push 3000h	; MEM_COMMIT | MEM_RESERVE
+	push dllpathlen
+	push 0
+	push phandle
+	call VirtualAllocEx
+	mov baseaddress , eax
+
+	; writeprocessmemory
+	push offset outwritten
+	push dllpathlen
+	push offset dllpath
+	push baseaddress
+	push phandle
+	call WriteProcessMemory
+
+
+
+	; getmodulehandle
+	push offset modulename
+	call GetModuleHandle
+	mov modulehandle,eax 
+
+
+
+	;getprocaddress
+	push offset funcname
+	push modulehandle
+	call GetProcAddress
+	mov loadlibaddress, eax
+
+
+	;createremotethread
+	push offset threadid
+	push 0
+	push baseaddress
+	push loadlibaddress
+	push 0
+	push 0
+	push phandle
+	call CreateRemoteThread
+
+
+
+
+	; close handle
+	push phandle
+	call CloseHandle
+
+
+	nop
+	
+exit1:
+	push 0
+	call ExitProcess
+
+main ENDP
+end main
